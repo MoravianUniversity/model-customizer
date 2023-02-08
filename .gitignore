@@ -130,3 +130,6 @@ dmypy.json
 
 # Param files so the python has to generate them
 .param
+
+# .idea folder
+.idea
