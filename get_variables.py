@@ -1,5 +1,6 @@
 import subprocess
 import json
+import urllib.request
 
 
 def get_variables(url='https://drek.cc/example.scad'):
@@ -48,17 +49,13 @@ def scad_json_to_our_json(scad_json):
     our_json = []
     for i, current_scad_var in enumerate(scad_json):
         # the elements attached to every variable
-        name = current_scad_var['name']
-        desc = current_scad_var['caption']
-        default = current_scad_var['initial']
-        group = current_scad_var['group']
 
         our_json.append(
             {
-                'name': name,
-                'desc': desc,
-                'default': default,
-                'group': group,
+                'name': (current_scad_var['name']),
+                'desc': (current_scad_var['caption']),
+                'default': (current_scad_var['initial']),
+                'group': (current_scad_var['group']),
             }
         )
 
@@ -72,5 +69,21 @@ def scad_json_to_our_json(scad_json):
             # todo: ask if this format is okay
             our_json[i]['options'] = current_scad_var['options']
 
-    return our_json
+        # TODO: differentiate from numbox
+        # Slider
+        if current_scad_var.__contains__('min'):
+            our_json[i]['style'] = 'slider'
+            our_json[i]['min'] = current_scad_var['min']
+            our_json[i]['max'] = current_scad_var['max']
+            our_json[i]['inc'] = current_scad_var['step']
 
+        # Textbox
+        if current_scad_var.__contains__('maxLength'):
+            our_json[i]['style'] = 'textbox'
+            our_json[i]['max_len'] = current_scad_var['maxLength']
+
+        # Checkbox
+        if current_scad_var['type'] == 'boolean':
+            our_json[i]['style'] = 'checkbox'
+
+    return our_json
