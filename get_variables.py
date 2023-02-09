@@ -11,11 +11,15 @@ def get_variables(url='https://drek.cc/example.scad'):
     :return: the final json as a string
     """
     # todo: turn the url into a file (ask jeff)
-    input_path = 'example.scad'
+    filename = url.split("/")[-1]
+    input_path = f'/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/{filename}'
+    urllib.request.urlretrieve(url, input_path)
+
 
     # todo: throw exception if url isn't good
 
-    scad_json = scad_to_scad_json(input_path)
+    scad_json = scad_to_scad_json(input_path, f'/Users/colemans/Courses/3d '
+                                              f'Printing/model-customizer/OpenSCAD_json_dumps/{filename.split(".")[0]}.param')
     return scad_json_to_our_json(scad_json)
 
 
@@ -49,11 +53,10 @@ def scad_json_to_our_json(scad_json):
     our_json = []
     for i, current_scad_var in enumerate(scad_json):
         # the elements attached to every variable
-
         our_json.append(
             {
                 'name': (current_scad_var['name']),
-                'desc': (current_scad_var['caption']),
+                'desc': (current_scad_var.get('caption', '')),
                 'default': (current_scad_var['initial']),
                 'group': (current_scad_var['group']),
             }
@@ -87,3 +90,5 @@ def scad_json_to_our_json(scad_json):
             our_json[i]['style'] = 'checkbox'
 
     return our_json
+
+print(get_variables('https://drek.cc/dl/example2.scad'))
