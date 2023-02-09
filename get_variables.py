@@ -26,7 +26,12 @@ def scad_to_scad_json(input_path, output_path):
     :return: the output json as a string
     """
     subprocess.run(['openscad', input_path, '-o', output_path])
-    return open(output_path, 'r').read()
+
+    scad_json_file = open(output_path, 'r')
+    scad_json = scad_json_file.read()
+    scad_json_file.close()
+
+    return scad_json
 
 
 def scad_json_to_our_json(scad_json):
@@ -57,14 +62,15 @@ def scad_json_to_our_json(scad_json):
             }
         )
 
-        # Extra Options
-        for extra in current_scad_var:
-            # The drop-down menu
-            if extra == 'options':
-                our_json[i]['style'] = 'dropdown'
-                # todo: ask if this format is okay
-                our_json[i]['options'] = current_scad_var['options']
+        # So I can use keys and contains on it
+        current_scad_var = dict(current_scad_var)
 
-    # todo: change this and tests to output a string
+        # Extra Options
+        # Drop Down Menu
+        if current_scad_var.__contains__('options'):
+            our_json[i]['style'] = 'dropdown'
+            # todo: ask if this format is okay
+            our_json[i]['options'] = current_scad_var['options']
+
     return our_json
 
