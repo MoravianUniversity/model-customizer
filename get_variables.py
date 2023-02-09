@@ -1,5 +1,6 @@
 import subprocess
 import json
+import urllib.request
 
 
 def get_variables(url='https://drek.cc/example.scad'):
@@ -10,11 +11,15 @@ def get_variables(url='https://drek.cc/example.scad'):
     :return: the final json as a string
     """
     # todo: turn the url into a file (ask jeff)
-    input_path = 'example.scad'
+    filename = url.split("/")[-1]
+    input_path = f'/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/{filename}'
+    urllib.request.urlretrieve(url, input_path)
+
 
     # todo: throw exception if url isn't good
 
-    scad_json = scad_to_scad_json(input_path)
+    scad_json = scad_to_scad_json(input_path, f'/Users/colemans/Courses/3d '
+                                              f'Printing/model-customizer/OpenSCAD_json_dumps/{filename.split(".")[0]}.param')
     return scad_json_to_our_json(scad_json)
 
 
@@ -26,7 +31,12 @@ def scad_to_scad_json(input_path, output_path):
     :return: the output json as a string
     """
     subprocess.run(['openscad', input_path, '-o', output_path])
-    return open(output_path, 'r').read()
+
+    scad_json_file = open(output_path, 'r')
+    scad_json = scad_json_file.read()
+    scad_json_file.close()
+
+    return scad_json
 
 
 def scad_json_to_our_json(scad_json):
@@ -43,28 +53,42 @@ def scad_json_to_our_json(scad_json):
     our_json = []
     for i, current_scad_var in enumerate(scad_json):
         # the elements attached to every variable
-        name = current_scad_var['name']
-        desc = current_scad_var['caption']
-        default = current_scad_var['initial']
-        group = current_scad_var['group']
-
         our_json.append(
             {
-                'name': name,
-                'desc': desc,
-                'default': default,
-                'group': group,
+                'name': (current_scad_var['name']),
+                'desc': (current_scad_var.get('caption', '')),
+                'default': (current_scad_var['initial']),
+                'group': (current_scad_var['group']),
             }
         )
 
-        # Extra Options
-        for extra in current_scad_var:
-            # The drop-down menu
-            if extra == 'options':
-                our_json[i]['style'] = 'dropdown'
-                # todo: ask if this format is okay
-                our_json[i]['options'] = current_scad_var['options']
+        # So I can use keys and contains on it
+        current_scad_var = dict(current_scad_var)
 
-    # todo: change this and tests to output a string
+        # Extra Options
+        # Drop Down Menu
+        if current_scad_var.__contains__('options'):
+            our_json[i]['style'] = 'dropdown'
+            # todo: ask if this format is okay
+            our_json[i]['options'] = current_scad_var['options']
+
+        # TODO: differentiate from numbox
+        # Slider
+        if current_scad_var.__contains__('min'):
+            our_json[i]['style'] = 'slider'
+            our_json[i]['min'] = current_scad_var['min']
+            our_json[i]['max'] = current_scad_var['max']
+            our_json[i]['inc'] = current_scad_var['step']
+
+        # Textbox
+        if current_scad_var.__contains__('maxLength'):
+            our_json[i]['style'] = 'textbox'
+            our_json[i]['max_len'] = current_scad_var['maxLength']
+
+        # Checkbox
+        if current_scad_var['type'] == 'boolean':
+            our_json[i]['style'] = 'checkbox'
+
     return our_json
 
+print(get_variables('https://drek.cc/dl/example2.scad'))
