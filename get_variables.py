@@ -1,5 +1,6 @@
 import subprocess
 import json
+import tempfile
 import urllib.request
 
 
@@ -11,30 +12,28 @@ def get_variables(url):
     :return: the final json as a string
     """
     # todo: turn the url into a file (ask jeff)
-    filename = url.split("/")[-1]
-    input_path = f'/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/{filename}'
+    input_path = tempfile.NamedTemporaryFile().name
     urllib.request.urlretrieve(url, input_path)
     # todo: make this work with file urls
     # todo: use temp files
-
-
     # todo: throw exception if url isn't good
 
-    scad_json = scad_to_scad_json(input_path, f'/Users/colemans/Courses/3d '
-                                              f'Printing/model-customizer/OpenSCAD_json_dumps/{filename.split(".")[0]}.param')
+    scad_json = scad_to_scad_json(input_path)
     return scad_json_to_our_json(scad_json)
 
 
-def scad_to_scad_json(input_path, output_path):
+def scad_to_scad_json(input_path):
     """
     Takes a scad file and returns its customizer json as a string
     :param input_path: the scad file
     :param output_path: the location of the output json
     :return: the output json as a string
     """
-    subprocess.run(['openscad', input_path, '-o', output_path])
-    with open(output_path, 'r') as scad_json_file:
-        return json.load(scad_json_file)
+    # with (tempfile.NamedTemporaryFile() as scad_json_file):
+    # scad_json_file = tempfile.NamedTemporaryFile()
+    subprocess.run(['openscad', input_path, '-o', scad_json_file.name])
+    return json.load(scad_json_file.read())
+
 
 def scad_json_to_our_json(scad_json):
     """
