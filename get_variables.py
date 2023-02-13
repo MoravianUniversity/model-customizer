@@ -1,3 +1,4 @@
+import os
 import subprocess
 import json
 import tempfile
@@ -30,9 +31,12 @@ def scad_to_scad_json(input_path):
     :return: the output json as a string
     """
     # with (tempfile.NamedTemporaryFile() as scad_json_file):
-    # scad_json_file = tempfile.NamedTemporaryFile()
-    subprocess.run(['openscad', input_path, '-o', scad_json_file.name])
-    return json.load(scad_json_file.read())
+    scad_json_file = tempfile.NamedTemporaryFile()
+    # scad_json_file.write(b'')
+    process = subprocess.Popen(['openscad', input_path, '-o', scad_json_file.name])
+    process.wait()
+    read = json.load(scad_json_file.read())
+    return read
 
 
 def scad_json_to_our_json(scad_json):
