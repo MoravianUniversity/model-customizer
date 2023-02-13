@@ -13,13 +13,17 @@ def get_variables(url):
     :return: the final json as a string
     """
     # todo: turn the url into a file (ask jeff)
-    input_path = tempfile.NamedTemporaryFile().name
-    urllib.request.urlretrieve(url, input_path)
+    # create the file
+    open('temp_input_file','w').close()
+
+    with open('temp_input_file', 'r') as input_path:
+        urllib.request.urlretrieve(url, input_path.name)
     # todo: make this work with file urls
     # todo: use temp files
     # todo: throw exception if url isn't good
 
     scad_json = scad_to_scad_json(input_path)
+    os.remove('temp_input_file')
     return scad_json_to_our_json(scad_json)
 
 
@@ -30,12 +34,11 @@ def scad_to_scad_json(input_path):
     :param output_path: the location of the output json
     :return: the output json as a string
     """
-    # with (tempfile.NamedTemporaryFile() as scad_json_file):
-    scad_json_file = tempfile.NamedTemporaryFile()
-    # scad_json_file.write(b'')
-    process = subprocess.Popen(['openscad', input_path, '-o', scad_json_file.name])
+    process = subprocess.Popen(['openscad', input_path.name, '-o', 'temp_output_file.param'])
     process.wait()
-    read = json.load(scad_json_file.read())
+    scad_json_file = open('temp_output_file.param', 'r')
+    read = json.load(scad_json_file)
+    os.remove('temp_output_file.param')
     return read
 
 
