@@ -3,6 +3,7 @@ import subprocess
 import json
 import tempfile
 import urllib.request
+import urllib.parse
 
 
 def get_variables(url):
@@ -12,13 +13,20 @@ def get_variables(url):
     :param url: the url of the scad file
     :return: the final json as a string
     """
-    # todo: turn the url into a file (ask jeff)
     # create the file
     open('temp_input_file','w').close()
 
     with open('temp_input_file', 'r') as input_path:
-        urllib.request.urlretrieve(url, input_path.name)
-    # todo: make this work with file urls
+        url_start = url.split(':')[0]
+        if url_start == 'https' or url_start == 'http':
+            urllib.request.urlretrieve(url, input_path.name)
+        elif url_start == 'file':
+            # .parse is to get rid of url encoding
+            os.system(f'cp "{urllib.parse.unquote(url[7:])}" {input_path.name}')
+        else:
+            raise Exception("Invalid url")
+
+
     # todo: use temp files
     # todo: throw exception if url isn't good
 
@@ -75,7 +83,7 @@ def scad_json_to_our_json(scad_json):
 
         # TODO: differentiate from numbox
         # Slider
-        if 'min' in current_scad_var:
+        if 'min' in current_scad_var and 'max' in current_scad_var:
             variable['style'] = 'slider'
             variable['min'] = current_scad_var['min']
             variable['max'] = current_scad_var['max']
@@ -93,4 +101,5 @@ def scad_json_to_our_json(scad_json):
     return our_json
 
 
-print(get_variables('https://drek.cc/dl/example2.scad'))
+# print(get_variables('https://drek.cc/dl/example2.scad'))
+print(get_variables('file:///Users/colemans/Courses/3d%20Printing/model-customizer/OpenSCAD_Files/checkbox.scad'))
