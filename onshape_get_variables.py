@@ -1,26 +1,33 @@
 import requests 
-import json 
+import json
+import re
 
 from config import ACCESS_KEY, SECRET_KEY
 
 
-# TODO: Implement function to build correct variables api_url using format, change function to take did wid eid instead
-
-def get_variables(api_url='https://cad.onshape.com/api/v5/variables/d/3c26b3daca62374f0e255d71/w/f85838c02b4f9c69defdf995/e/80a526943d7399f491201813/variables'):
+def get_variables(document_url):
     """
     Generates our JSON format based on a url. Starts by getting the onshape document variables, turning them into json, 
     and then formatting it correctly for our database.
-    :param api_url: the url of the scad file
+    :param document_url: the url of the onshape document
     :return: the final json as a string
     """
 
     # Use the API keys generated from the Onshape developer portal 
     api_keys = (ACCESS_KEY, SECRET_KEY)
 
-    # TODO: throw exception if url isn't good
+    variable_url = build_variables_url(document_url)
 
-    onshape_json = fetch_onshape_document_variables_json(api_keys, api_url)
+    onshape_json = fetch_onshape_document_variables_json(api_keys, variable_url)
     return onshape_json_to_our_json(onshape_json) 
+
+def build_variables_url(document_url):
+    """
+    Builds a special variable url in order to fetch the variable data from the document through the Onshape API
+    :param document_url: the url of the onshape document
+    """
+    m = re.match(r"^https?://cad.onshape.com/documents/([0-9a-f]+)/([wv])/([0-9a-f]+)/e/([0-9a-f]+)", document_url)
+    return f'https://cad.onshape.com/api/v5/variables/d/{m.group(1)}/{m.group(2)}/{m.group(3)}/e/{m.group(4)}/variables'
 
 
 def fetch_onshape_document_variables_json(api_keys, api_url):
