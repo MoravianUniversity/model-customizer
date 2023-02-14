@@ -1,8 +1,13 @@
 import requests 
 import json
 import re
+import math
+from collections import namedtuple
 
 from config import ACCESS_KEY, SECRET_KEY
+
+
+OnShapeDocInfo = namedtuple("OnShapeDocInfo", ('did', 'wv', 'wvid', 'eid'))
 
 
 def get_variables(document_url):
@@ -13,21 +18,27 @@ def get_variables(document_url):
     :return: the final json as a string
     """
 
+
     # Use the API keys generated from the Onshape developer portal 
     api_keys = (ACCESS_KEY, SECRET_KEY)
 
-    variable_url = build_variables_url(document_url)
+    variable_url = get_variable_url(get_doc_info(document_url))
 
     onshape_json = fetch_onshape_document_variables_json(api_keys, variable_url)
     return onshape_json_to_our_json(onshape_json) 
 
-def build_variables_url(document_url):
+def get_doc_info(document_url: str) -> OnShapeDocInfo:
     """
     Builds a special variable url in order to fetch the variable data from the document through the Onshape API
     :param document_url: the url of the onshape document
     """
     m = re.match(r"^https?://cad.onshape.com/documents/([0-9a-f]+)/([wv])/([0-9a-f]+)/e/([0-9a-f]+)", document_url)
-    return f'https://cad.onshape.com/api/v5/variables/d/{m.group(1)}/{m.group(2)}/{m.group(3)}/e/{m.group(4)}/variables'
+    if m is None: raise ValueError('invalid OnShape URL')
+    return OnShapeDocInfo(m.group(1), m.group(2), m.group(3), m.group(4))
+
+
+def get_variable_url(doc_info: OnShapeDocInfo) -> str:
+    return f'https://cad.onshape.com/api/v5/variables/d/{doc_info.did}/{doc_info.wv}/{doc_info.wvid}/e/{doc_info.eid}/variables'
 
 
 def fetch_onshape_document_variables_json(api_keys, api_url):
@@ -71,17 +82,24 @@ def onshape_json_to_our_json(onshape_json):
 
         if type == 'LENGTH':
             value, label = current_onshape_var['value'].split(' ')
+            if label.lower() != "meter": raise RuntimeError('unknown LENGTH units')
             value = float(value)*1000 # convert to mm from meters
             label = 'mm'
         elif type == 'ANGLE':
             value, label = current_onshape_var['value'].split(' ')
+            if label.lower() != "radian": raise RuntimeError('unknown ANGLE units')
+            value = float(value)*180/math.pi
+            label = 'degrees'
         elif type == 'NUMBER':
             value = current_onshape_var['value']
+            value = float(value)
             label = ''
         elif type == 'ANY':
             value = current_onshape_var['value']
             label = ''
 
+# flt = ':[^:,\n\]]+'
+# [+-]?([0-9]*[.])?[0-9]+
 
         our_json.append(
             {
