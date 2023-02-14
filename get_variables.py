@@ -23,7 +23,7 @@ def get_variables(url: str) -> List[Dict[str, Any]]:
             input_file = NamedTemporaryFile()
             source = input_file.name
             # todo: throw exception if url isn't good
-            urlretrieve(url, input_file)
+            urlretrieve(url, source)
         elif url_parts.scheme in ('file', ''):
             source = unquote(url_parts.path)
             if not os.path.exists(source):
@@ -100,5 +100,5 @@ def scad_json_to_our_json(scad_json: dict):
     return our_json
 
 
-# print(get_variables('https://drek.cc/dl/example2.scad'))
-print(get_variables('file:///Users/colemans/Courses/3d%20Printing/model-customizer/OpenSCAD_Files/checkbox.scad'))
+print(get_variables('https://drek.cc/dl/example2.scad'))
+# print(get_variables('file:///Users/colemans/Courses/3d%20Printing/model-customizer/OpenSCAD_Files/checkbox.scad'))
