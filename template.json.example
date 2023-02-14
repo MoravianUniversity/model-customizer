@@ -1,0 +1,62 @@
+[
+    {
+        "name": "...",  # valid variable name, if you display this, should convert from snake-case or camel-case to human-prefered
+        "desc": "...",  # may be empty string, then only name can be shown
+        "default": ...,
+        "group": "...",  # a "tab" group, empty string is the default group (maybe not in a tab at all), the "global" group is not show by itself but on every other tab
+        "style": "checkbox" or "dropdown" or "numbox" or "vector-numbox" or "vector-dropdown" or "vector-textbox" or "slider" or "textbox",
+
+        # if style is checkbox: nothing special
+
+        # if style is dropdown:
+        # default will always exist as a value in choices (not a key)
+        # choices is list or dict of choices, if dict, keys are shown but values are sent
+        # values (in list or dict) can be strings, ints, or floats; type must be preserved
+        "options": [] or {},
+
+        # if style is numbox:
+        # min and max are inclusive, min and/or max may be null in which case there is no limit in that direction
+        # every value x must satisfy (x-min)%inc == 0  (within reasonable precision for floats, if no min, use 0 in the equation)
+        # default will always satisfy the requirement
+        # if all of min, max, and inc are int or null, value is an int; otherwise float
+        "min": ..., "max": ..., "inc": ...,  
+
+        # if style is slider:
+        # min and max are inclusive
+        # every value x must satisfy (x-min)%inc == 0  (within reasonable precision for floats)
+        # default will always satisfy the requirement
+        # min and max are required
+        # if all of min, max, and inc are int, value is an int; otherwise float
+        "min": ..., "max": ..., "inc": ...,
+
+        # if style is textbox:
+        # max_len is maximum length of the string, if null then no max length
+        "max_len": ...,
+
+        # if style is vector-numbox, vector-dropdown, or vector-textbox:
+        # work just like the non-vector versions except multiple boxes are given, one for each element
+        # restrictions apply to all elements equally
+        # the type and number of elements must stay the same as is in the default value
+
+        ##### The rest are not in use yet #####
+
+        # if style is list:
+        # like a vector except the number of values is allowed to be changed
+        "min_len": ..., "max_len": ...,
+
+        # if style is range:
+        # two or three numbers for start and stop and maybe step
+        "start": {"min": ..., "max": ..., "inc": ... },
+        "stop": {"min": ..., "max": ..., "inc": ... },
+        "step": {"min": ..., "max": ..., "inc": ... },  # or a single number if "fixed"
+
+        # if style is color:
+        # can be an integer (for the hex value), a 3/4 element vector of ints (each 0 to 255), a 3/4 element vector of floats (each 0 to 1), or a string
+        # the type of value given should be the same as the default
+        # if a string, can be a hexstring like #ffffff or a color name from http://www.w3.org/TR/css3-color/
+        "has_alpha": ...,
+
+        # if style is spinbox
+
+    }
+]
