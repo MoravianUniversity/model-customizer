@@ -7,6 +7,10 @@ from urllib.parse import urlparse, unquote
 from typing import List, Dict, Any
 
 
+def is_onshape(url: str) -> bool:
+    return urlparse(url).hostname == 'cad.onshape.com'
+
+
 def get_variables(url: str) -> List[Dict[str, Any]]:
     """
     Generates our JSON format based on a url. Starts by getting the scad file, turning it into json, and then formatting
@@ -103,5 +107,24 @@ def scad_json_to_our_json(scad_json: dict):
     return our_json
 
 
-print(get_variables('https://drek.cc/dl/example2.scad'))
-# print(get_variables('file:///Users/colemans/Courses/3d%20Printing/model-customizer/OpenSCAD_Files/checkbox.scad'))
+def main():
+    # previous testing stuff
+    # print(get_variables('https://drek.cc/dl/example2.scad'))
+    # print(get_variables('file:///Users/colemans/Courses/3d%20Printing/model-customizer/OpenSCAD_Files/checkbox.scad'))
+    # is_onshape(
+    #     "https://cad.onshape.com/documents/c99362a81274b324031e8a14/w/9ae465f95c7a664af9bf7cde/e/6cb81e95a38e589a1fc4dfe5")
+
+    # actual main
+    # get url somehow
+    url = 'https://drek.cc/dl/example2.scad'
+
+    ## todo: move url verification down here
+    if is_onshape(url):
+        pass
+        # Zack does something
+    else:
+        get_variables(url)
+
+
+if __name__ == '__main__':
+    main()
