@@ -67,11 +67,21 @@ def onshape_json_to_our_json(onshape_json):
         desc = current_onshape_var['description']
         # default = current_onshape_var['initial']
         # group = current_onshape_var['group']
-        value, label = current_onshape_var['value'].split(' ')
+        type = current_onshape_var['type']
 
-        if label == 'meters':
+        if type == 'LENGTH':
+            value, label = current_onshape_var['value'].split(' ')
             value = float(value)*1000 # convert to mm from meters
             label = 'mm'
+        elif type == 'ANGLE':
+            value, label = current_onshape_var['value'].split(' ')
+        elif type == 'NUMBER':
+            value = current_onshape_var['value']
+            label = ''
+        elif type == 'ANY':
+            value = current_onshape_var['value']
+            label = ''
+
 
         our_json.append(
             {
