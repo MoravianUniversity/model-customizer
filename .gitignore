@@ -129,7 +129,10 @@ dmypy.json
 .pyre/
 
 # Param files so the python has to generate them
-.param
+*.param
 
-# .idea folder
-.idea
+# Hidden files
+.*
+
+# Config files
+config.py

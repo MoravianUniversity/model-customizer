@@ -1,8 +1,7 @@
 import requests 
 import json 
 
-import os
-from dotenv import load_dotenv
+from config import ACCESS_KEY, SECRET_KEY
 
 
 # TODO: Implement function to build correct variables api_url using format, change function to take did wid eid instead
@@ -14,10 +13,9 @@ def get_variables(api_url='https://cad.onshape.com/api/v5/variables/d/3c26b3daca
     :param api_url: the url of the scad file
     :return: the final json as a string
     """
-    load_dotenv()  # take environment variables from .env.
 
     # Use the API keys generated from the Onshape developer portal 
-    api_keys = (os.getenv('ACCESS_KEY'), os.getenv('SECRET_KEY'))
+    api_keys = (ACCESS_KEY, SECRET_KEY)
 
     # TODO: throw exception if url isn't good
 
@@ -72,9 +70,8 @@ def onshape_json_to_our_json(onshape_json):
             {
                 'name': name,
                 'desc': desc,
-                # 'default': default,
+                'default': value,
                 # 'group': group,
-                'value': value,
                 'label': label
             }
         )
