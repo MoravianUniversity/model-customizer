@@ -81,11 +81,7 @@ def scad_json_to_our_json(scad_json: dict):
         # Drop Down Menu
         if 'options' in current_scad_var:
             variable['style'] = 'dropdown'
-            # todo: ask if this format is okay (no, make it a dict and nicer)
-            options = {}
-            for item in current_scad_var['options']:
-                options[item['name']] = item['value']
-            variable['options'] = options
+            variable['options'] = {item['name']: item['value'] for item in current_scad_var['options']}
 
         # TODO: differentiate from numbox
         # Slider
@@ -123,7 +119,7 @@ def main():
         pass
         # Zack does something
     else:
-        get_variables(url)
+        print(get_variables(url))
 
 
 if __name__ == '__main__':
