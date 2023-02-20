@@ -49,7 +49,7 @@ def scad_to_scad_json(input_path: str) -> dict:
     :return: the output json as a string
     """
     with NamedTemporaryFile('r', suffix=".param") as tmp:
-        subprocess.run(['openscad', input_path, '-o', tmp.name]).check_returncode()
+        subprocess.run(['openscad-nightly', input_path, '-o', tmp.name]).check_returncode()
         return json.load(tmp)
 
 
