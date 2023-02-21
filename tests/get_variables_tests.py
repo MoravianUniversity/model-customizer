@@ -1,5 +1,5 @@
 import unittest
-import get_variables
+from scad import get_variables
 
 
 class TestGetVariables(unittest.TestCase):
