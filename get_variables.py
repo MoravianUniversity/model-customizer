@@ -138,8 +138,6 @@ def get_stl(url_or_path: str, variables: dict):
             scad_file,
         ])
 
-        print(tmp_stl.name)
-
     return None  # The binary? the file path?
 
 
