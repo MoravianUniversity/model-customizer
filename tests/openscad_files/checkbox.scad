@@ -1,0 +1,4 @@
+/* [Checkbox] */
+
+//description
+Variable = true;

@@ -6,7 +6,7 @@ class TestGetVariables(unittest.TestCase):
 
     def test_scad_json_to_our_json_drop_down(self):
         our_json = self.get_our_json(
-            '/Users/colemans/Courses/3d Printing/model-customizer/OpenScad_Files/drop_down_box.scad',
+            './openscad_files/drop_down_box.scad',
         )
         self.assertEqual(our_json,
                          [
@@ -28,7 +28,7 @@ class TestGetVariables(unittest.TestCase):
 
     def test_scad_json_to_our_json_slider(self):
         our_json = self.get_our_json(
-            '/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/sliders.scad',
+            './openscad_files/sliders.scad',
         )
         self.assertEqual(our_json,
                          [
@@ -47,7 +47,7 @@ class TestGetVariables(unittest.TestCase):
 
     def test_scad_json_to_our_json_textbox(self):
         our_json = self.get_our_json(
-            '/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/textbox.scad',
+            './openscad_files/textbox.scad',
         )
         self.assertEqual(our_json,
                          [
@@ -64,7 +64,7 @@ class TestGetVariables(unittest.TestCase):
 
     def test_scad_json_to_our_json_checkbox(self):
         our_json = self.get_our_json(
-            '/Users/colemans/Courses/3d Printing/model-customizer/OpenSCAD_Files/checkbox.scad',
+            './openscad_files/checkbox.scad',
         )
         self.assertEqual(our_json,
                          [
