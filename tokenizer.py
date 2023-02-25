@@ -2,7 +2,6 @@ import _io
 import io
 import struct
 from typing import List
-
 import numpy as np
 
 
@@ -61,12 +60,12 @@ def stl2raw(path: str) -> np.ndarray:
     :return: a numpy array of vertices
     """
     with open(path, 'rb') as file:
-        header, header_pos = process_header(file)  # Returns a negative position if the header is an ascii header
+        header, header_pos, is_binary = process_header(file)
 
-        if header_pos < 0:
-            data = np.array(read_ascii_stl(file, header, header_pos))
-        else:
+        if is_binary:
             data = read_binary_stl(file, header_pos)  # Raw File with a binary STL doesn't need the header
+        else:
+            data = np.array(read_ascii_stl(file, header, header_pos))
 
         return data
 
@@ -109,7 +108,7 @@ def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int)
     """
 
     # Deal with header
-    solid_line = header[len(SOLID):-header_pos]
+    solid_line = header[len(SOLID):header_pos]
     is_space = solid_line.find(b' ')
     solid_name = solid_line if is_space == -1 else solid_line[0:is_space]
 
@@ -134,6 +133,7 @@ def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int)
             check_next_token(tokenizer, b'endloop')
             check_next_token(tokenizer, b'endfacet')
         elif current_token == b'endsolid':
+            print(solid_name)
             check_next_token(tokenizer, solid_name)
             break
         else:
@@ -142,7 +142,7 @@ def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int)
     return np.array(data)
 
 
-def process_header(file: _io.BufferedReader):
+def process_header(file: _io.BufferedReader) -> tuple[bytearray, int, bool]:
     """
     Figures out if a STL file is ASCII or Binary by reading the header
     :param file: an STL file
@@ -158,13 +158,13 @@ def process_header(file: _io.BufferedReader):
 
     # Read the header if it exists, otherwise move the header_pos forward
     is_start_solid = header.startswith(SOLID)
-    header_pos = read_solid_line(file, header) if is_start_solid else len(SOLID)
-    return header, header_pos
+    header_pos, is_binary = read_solid_line(file, header) if is_start_solid else (len(SOLID), True)
+    return header, header_pos, is_binary
 
 
 # HELPER FUNCTIONS
 
-def read_solid_line(file: _io.BufferedReader, header: bytearray) -> int:
+def read_solid_line(file: _io.BufferedReader, header: bytearray) -> tuple[int, bool]:
     """
     Checks the solid line in the heading for ascii or binary characters
     :param file: a STL file
@@ -172,23 +172,25 @@ def read_solid_line(file: _io.BufferedReader, header: bytearray) -> int:
     :return: the length of the header, negative if the STL file is ASCII
     """
     header_pos = len(SOLID)
+    is_binary = True
     while header_pos < BINARY_HEADER_SIZE:
         next_byte = file.read(1)
         if not next_byte:
             raise Exception('STL file too short')
 
         if next_byte in b'\n\r':
-            return -header_pos  # finished reading first line of an ASCII file
+            is_binary = False
+            return header_pos, is_binary  # finished reading first line of an ASCII file
 
         header[header_pos:header_pos + 1] = next_byte
         header_pos += 1
         if next_byte > b'~' or next_byte < b' ':
             # this means it's actually a binary file
             # NOTE: this assumes the ASCII file doesn't have Unicode (it REALLY shouldn't...)
-            return header_pos
+            return header_pos, is_binary
 
     # This has got to be binary at this point...
-    return header_pos
+    return header_pos, is_binary
 
 
 def check_next_token(tokenizer: Tokenizer, correct_token: bytes):
