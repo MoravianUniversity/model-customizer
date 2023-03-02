@@ -1,8 +1,10 @@
 import _io
+import gzip
 import io
 import struct
-from typing import List
+from typing import List, Tuple, Dict
 import numpy as np
+from itertools import chain
 
 
 class Tokenizer:
@@ -53,9 +55,21 @@ SOLID = b'solid '
 BINARY_HEADER_SIZE = 80
 
 
-def stl2raw(path: str) -> np.ndarray:
+def write_raw_file(vertices, indices):
+    with gzip.open('output.vao.gz', 'wb') as f:
+        f.write(struct.pack('>I', len(vertices)))  # number of vertices
+        f.write(struct.pack('>I', len(indices)))  # number of indices
+
+        # Gets the
+        np_vertices = np.fromiter(chain.from_iterable(vertices.keys()), '>f4', len(vertices) * 3)
+
+        f.write(np_vertices.tobytes())
+        f.write(np.array(indices, '>u2').tobytes())
+
+
+def stl2raw(path: str) -> (Dict, List):
     """
-    Takes a path to an STL file, either ascii or binary, and outputs an array of vertexes
+    Takes a path to an STL file, either ascii or binary, and create a vao file
     :param path: the path to a stl file
     :return: a numpy array of vertices
     """
@@ -63,19 +77,21 @@ def stl2raw(path: str) -> np.ndarray:
         header, header_pos, is_binary = process_header(file)
 
         if is_binary:
-            data = read_binary_stl(file, header_pos)  # Raw File with a binary STL doesn't need the header
+            vertices, indices = read_binary_stl(file, header_pos)  # Raw File with a binary STL doesn't need the header
         else:
-            data = np.array(read_ascii_stl(file, header, header_pos))
+            vertices, indices = read_ascii_stl(file, header, header_pos)
 
-        return data
+        write_raw_file(vertices, indices)
+
+        return vertices, indices
 
 
-def read_binary_stl(file: _io.BufferedReader, header_pos: int) -> np.ndarray:
+def read_binary_stl(file: _io.BufferedReader, header_pos: int) -> (Dict, List):
     """
     Makes an array of vertices from a binary STL file
     :param file: the binary STL file
     :param header_pos: The length of the header
-    :return: a numpy array of vertices
+    :return: a dict of vertices to their index and a list of indices
     """
     # Read the rest of the header
     to_read = BINARY_HEADER_SIZE - header_pos
@@ -84,27 +100,29 @@ def read_binary_stl(file: _io.BufferedReader, header_pos: int) -> np.ndarray:
 
     # Starts the numpy array with enough space for all the files
     num_tris = struct.unpack('<I', file.read(4))[0]  # index because the float comes in a tuple by itself
-    data = np.empty(num_tris * 3 * 3)
-
-    offset = 0
+    vertices = {}
+    indices = []
     for _ in range(num_tris):
         # Read a triangle (3 floats for normal, 3*3 floats for vertices, two extras that we don't use)
         floats = struct.unpack('<12fxx', file.read(4 * 3 * 4 + 2))
 
         # First 3 are (possibly negative) normal for the entire face
-        data[offset:offset + 9] = floats[3:]
-        offset += 9
+        indices.extend(
+            # Linter error because python doesn't know this slice is the correct type
+            add_vertex_to_ibo(vertices, floats[3 + i * 3:6 + i * 3])
+            for i in range(3)
+        )
 
-    return data
+    return vertices, indices
 
 
-def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int) -> np.ndarray:
+def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int) -> (Dict, List):
     """
     Makes an array of vertices from an ASCII STL file
     :param file: a ASCII STL file
     :param header: the header of the file
     :param header_pos: the length of the header
-    :return: a numpy array of vertices
+    :return: a dict of vertices to their index and a list of indices
     """
 
     # Deal with header
@@ -115,7 +133,8 @@ def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int)
     # Commented out because we might need it later
     # val solid_metadata = "" if space == -1 else solid_line[space + 1:]
 
-    data = []
+    indices = []
+    vertices = {}
     tokenizer = Tokenizer(file)
     while True:
         current_token = tokenizer.next_token()
@@ -126,20 +145,19 @@ def read_ascii_stl(file: _io.BufferedReader, header: bytearray, header_pos: int)
             check_next_token(tokenizer, b'outer')
             check_next_token(tokenizer, b'loop')
 
-            read_vertex(tokenizer, data)
-            read_vertex(tokenizer, data)
-            read_vertex(tokenizer, data)
+            read_vertex(tokenizer, indices, vertices)
+            read_vertex(tokenizer, indices, vertices)
+            read_vertex(tokenizer, indices, vertices)
 
             check_next_token(tokenizer, b'endloop')
             check_next_token(tokenizer, b'endfacet')
         elif current_token == b'endsolid':
-            print(solid_name)
             check_next_token(tokenizer, solid_name)
             break
         else:
             raise Exception('Stl file has an incorrect format')
 
-    return np.array(data)
+    return vertices, indices
 
 
 def process_header(file: _io.BufferedReader) -> tuple[bytearray, int, bool]:
@@ -161,8 +179,6 @@ def process_header(file: _io.BufferedReader) -> tuple[bytearray, int, bool]:
     header_pos, is_binary = read_solid_line(file, header) if is_start_solid else (len(SOLID), True)
     return header, header_pos, is_binary
 
-
-# HELPER FUNCTIONS
 
 def read_solid_line(file: _io.BufferedReader, header: bytearray) -> tuple[int, bool]:
     """
@@ -193,6 +209,21 @@ def read_solid_line(file: _io.BufferedReader, header: bytearray) -> tuple[int, b
     return header_pos, is_binary
 
 
+# HELPER FUNCTIONS
+
+def add_vertex_to_ibo(indices: dict, vertex: Tuple[float, float, float]) -> int:
+    """
+    Adds a vertex to the ibo if it doesn't already exist
+    :param indices: a dict of vertices to index numbers
+    :param vertex: a tuple of 3 floats
+    :return: the index to be added to the list of indices
+    """
+    index = indices.get(vertex)
+    if index is None:
+        indices[vertex] = index = len(indices)
+    return index
+
+
 def check_next_token(tokenizer: Tokenizer, correct_token: bytes):
     """
     checks a token against what it should be, if the token is bad, throw an error
@@ -204,14 +235,16 @@ def check_next_token(tokenizer: Tokenizer, correct_token: bytes):
         raise Exception(f"Incorrect word in stl: {current_token}")
 
 
-def read_vertex(tokenizer: Tokenizer, data: List):
+def read_vertex(tokenizer: Tokenizer, indices: List, vertices: Dict):
     """
-    Reads a vertex line in an ASCII STL file
+    Reads a vertex line in an ASCII STL file and adds to the ibo
+    :param vertices: a dict of vertices to indices
     :param tokenizer: our tokenizer for the file
-    :param data: the numpy array of vertices
+    :param indices: the array of indices
     """
     check_next_token(tokenizer, b'vertex')
-    data.extend(read_3_floats(tokenizer))
+    vertex = read_3_floats(tokenizer)
+    indices.append(add_vertex_to_ibo(vertices, vertex))
 
 
 def read_3_floats(tokenizer: Tokenizer) -> tuple[float, float, float]:
@@ -249,14 +282,15 @@ def main():
     #         print(x)
 
     # test binary
-    data = stl2raw('/Users/colemans/Courses/3d Printing/model-customizer/tests/stl_files/example_binary.stl')
-    print(data.size // 9)
-    print(data)
+    # indices, vertices = stl2raw('/Users/colemans/Courses/3d Printing/model-customizer/tests/stl_files/example_binary.stl')
+    # print(indices)
+    # print(vertices)
 
-    # # test ascii
-    data = stl2raw('/Users/colemans/Courses/3d Printing/model-customizer/tests/stl_files/example_ascii.stl')
-    print(data.size // 9)
-    print(data)
+    # test ascii
+    indices, vertices = stl2raw(
+        '/Users/colemans/Courses/3d Printing/model-customizer/tests/stl_files/example_ascii.stl')
+    print(indices)
+    print(vertices)
 
 
 if __name__ == '__main__':
