@@ -1,6 +1,7 @@
 [
     {
         "name": "...",  // valid variable name, if you display this, should convert from snake-case or camel-case to human-prefered
+        "id": "...",    // optional id that should be preserved if provided
         "desc": "...",  // may be empty string, then only name can be shown
         "default": ...,
         "group": "...",  // a "tab" group, empty string is the default group (maybe not in a tab at all), the "global" group is not show by itself but on every other tab
